@@ -1,5 +1,6 @@
 // This #include statement was automatically added by the Particle IDE.
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_Si7021.h>
 
 int yellowLED = A0;
 int blueLED = A1;
@@ -9,8 +10,11 @@ int redLED = A3;
 bool isBlueOn = false;
 bool isGreenOn = false;
 
-Adafruit_SSD1306 display(RESET);
+int currentTemp;
+int currentHumidity;
 
+Adafruit_SSD1306 display(RESET);
+Adafruit_Si7021 sensor = Adafruit_Si7021();
 
 
 void toggle(bool isOn, int led) {
@@ -28,14 +32,12 @@ void toggle(bool isOn, int led) {
 void toggleGreen(const char *event, const char *data)
 {
   toggle(isGreenOn, greenLED);
-
   isGreenOn = !isGreenOn;
 }
 
 int toggleBlue(String command)
 {
   toggle(isBlueOn, blueLED);
-
   isBlueOn = !isBlueOn;
 
   return 1;
@@ -61,19 +63,35 @@ void initialize_display() {
 
 }
 
-void setup() {
-  pinMode(yellowLED, OUTPUT); // Yellow
-  pinMode(blueLED, OUTPUT); // Blue
-  pinMode(greenLED, OUTPUT); // Green
-  pinMode(redLED, OUTPUT); // Red
+void initialize_pins() {
+  pinMode(yellowLED, OUTPUT);
+  pinMode(blueLED, OUTPUT);
+  pinMode(greenLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+}
 
+void initialize_cloud_calls() {
   Particle.function("toggleBlue", toggleBlue);
   Particle.variable("greenOn", isGreenOn);
   Particle.subscribe("toggleGreen", toggleGreen, MY_DEVICES);
+}
 
-  initialize_display;
+void initialize_sensor() {
+  sensor.begin();
+  Particle.variable("temp", currentTemp);
+  Particle.variable("humidity", currentHumidity);
+  currentTemp = round((sensor.readTemperature() * 1.8 + 32.00) * 10) / 10;
+  currentHumidity = round(sensor.readHumidity()*10)/10;
+
+}
+
+void setup() {
+  initialize_pins();
+  initialize_cloud_calls();
+  initialize_display();
+  initialize_sensor();
 }
 
 void loop() {
-    
+
 }
